@@ -3,6 +3,8 @@ for record the time of copying shared variable arrays using multiprocessing Queu
 '''
 
 import time
+import sys
+
 from multiprocessing import Process, Queue
 
 
@@ -10,6 +12,7 @@ import zmq
 import numpy as np
 import pycuda.driver as drv
 import pycuda.gpuarray as gpuarray
+
 
 
 def fcn_send(shared_args, private_args, data_queue, msg_queue):
@@ -132,18 +135,21 @@ def fcn_recv(shared_args, private_args, data_queue, msg_queue):
 
 
 if __name__ == '__main__':
+    # sys.argv
+    # 1 send gpu, 2 recv gpu, 3 size in MB, 4 number of iterations
+
 
     shared_args = {}
     shared_args['flag_p2p'] = True
-    shared_args['size'] = 60 * 1000 * 1000
-    shared_args['num_iter'] = 10
+    shared_args['size'] = int(float(sys.argv[3]) * 1000 * 1000)
+    shared_args['num_iter'] = int(sys.argv[4])
     shared_args['flag_debug'] = True
 
     send_args = {}
-    send_args['ind_gpu'] = 1
+    send_args['ind_gpu'] = int(sys.argv[1])
     send_args['gpu'] = 'gpu' + str(send_args['ind_gpu'])
     recv_args = {}
-    recv_args['ind_gpu'] = 2
+    recv_args['ind_gpu'] = int(sys.argv[2])
     recv_args['gpu'] = 'gpu' + str(recv_args['ind_gpu'])
 
     data_queue = Queue(1)
