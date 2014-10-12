@@ -1,50 +1,12 @@
-"""
-This tutorial introduces logistic regression using Theano and stochastic
-gradient descent.
-
-Logistic regression is a probabilistic, linear classifier. It is parametrized
-by a weight matrix :math:`W` and a bias vector :math:`b`. Classification is
-done by projecting data points onto a set of hyperplanes, the distance to
-which is used to determine a class membership probability.
-
-Mathematically, this can be written as:
-
-.. math::
-  P(Y=i|x, W,b) &= softmax_i(W x + b) \\
-                &= \frac {e^{W_i x + b_i}} {\sum_j e^{W_j x + b_j}}
-
-
-The output of the model or prediction is then done by taking the argmax of
-the vector whose i'th element is P(Y=i|x).
-
-.. math::
-
-  y_{pred} = argmax_i P(Y=i|x,W,b)
-
-
-This tutorial presents a stochastic gradient descent optimization method
-suitable for large datasets, and a conjugate gradient optimization method
-that is suitable for smaller datasets.
-
-
-References:
-
-    - textbooks: "Pattern Recognition and Machine Learning" -
-                 Christopher M. Bishop, section 4.3.2
-
-"""
-__docformat__ = 'restructedtext en'
-
 import os
 import sys
 import time
 from multiprocessing import Process, Queue
 
+import numpy as np
 
-import numpy
 
-
-def sgd_optimization_mnist(shared_args, private_args, this_queue, that_queue):
+def fun_logreg(shared_args, private_args, this_queue, that_queue):
 
     learning_rate = shared_args['learning_rate']
     n_epochs = shared_args['n_epochs']
@@ -58,7 +20,6 @@ def sgd_optimization_mnist(shared_args, private_args, this_queue, that_queue):
     import theano.tensor as T
 
     from logistic_sgd import load_data, LogisticRegression
-
 
     print dataset
     datasets = load_data(dataset)
@@ -97,13 +58,13 @@ def sgd_optimization_mnist(shared_args, private_args, this_queue, that_queue):
     updates = [(classifier.W, classifier.W - learning_rate * g_W),
                (classifier.b, classifier.b - learning_rate * g_b)]
 
-    train_model = theano.function(inputs=[index],
-                                  outputs=cost,
-                                  updates=updates,
-                                  givens={
-                                  x: train_set_x[index * batch_size:(index + 1) * batch_size],
-                                  y: train_set_y[index * batch_size:(index + 1) * batch_size]})
-
+    train_model = theano.function(
+        inputs=[index],
+        outputs=cost,
+        updates=updates,
+        givens={
+            x: train_set_x[index * batch_size:(index + 1) * batch_size],
+            y: train_set_y[index * batch_size:(index + 1) * batch_size]})
 
     # TRAIN MODEL #
     print '... training the model'
@@ -123,7 +84,6 @@ def sgd_optimization_mnist(shared_args, private_args, this_queue, that_queue):
                 train_model(minibatch_index)
                 # time.sleep(0.05)
 
-
                 # exchaning weights through Queue and calculation through CPU
                 this_W_val = classifier.W.get_value()
                 this_queue.put(this_W_val)
@@ -134,7 +94,7 @@ def sgd_optimization_mnist(shared_args, private_args, this_queue, that_queue):
                 that_b_val = that_queue.get()
                 classifier.b.set_value((that_b_val + this_b_val) / 2)
 
-                # # test time speed if not actually exchanging weights
+                # test time speed if not actually exchanging weights
                 this_queue.put('')
                 that_queue.get()
 
@@ -142,14 +102,14 @@ def sgd_optimization_mnist(shared_args, private_args, this_queue, that_queue):
             # compute zero-one loss on validation set
             validation_losses = [validate_model(i)
                                  for i in xrange(n_valid_batches)]
-            this_validation_loss = numpy.mean(validation_losses)
+            this_validation_loss = np.mean(validation_losses)
 
             print('epoch %i, minibatch %i/%i, validation error %f %%' %
                   (epoch, minibatch_index + 1, n_train_batches,
                    this_validation_loss * 100.))
-    
+
     end_time = time.time()
-    
+
     if private_args['verbose']:
         print 'The code run for %d epochs, with %f epochs/sec' % (
             epoch, 1. * epoch / (end_time - start_time))
@@ -178,9 +138,9 @@ if __name__ == '__main__':
     queue_p = Queue(1)
     queue_q = Queue(1)
 
-    p = Process(target=sgd_optimization_mnist,
+    p = Process(target=fun_logreg,
                 args=(shared_args, p_args, queue_p, queue_q))
-    q = Process(target=sgd_optimization_mnist,
+    q = Process(target=fun_logreg,
                 args=(shared_args, q_args, queue_q, queue_p))
     p.start()
     q.start()
