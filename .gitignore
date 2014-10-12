@@ -1,3 +1,4 @@
 tut_*
 test_*
 .nfs*
+*.pyc
