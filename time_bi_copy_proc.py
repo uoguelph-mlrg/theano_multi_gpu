@@ -73,9 +73,12 @@ def fun_transfer(shared_args, private_args, queue_send, queue_recv):
                             W_ga_remote.dtype.itemsize * W_ga_remote.size,
                             ctx, ctx)
 
+            W_ga += W_ga_other
+            W_ga /= 2.
+
+            # average_weights()
             queue_send.put('')
             queue_recv.get()
-            average_weights()
 
         if shared_args['flag_debug']:
             print 'In gpu%d, the other \n %s' % \
@@ -98,6 +101,9 @@ def fun_transfer(shared_args, private_args, queue_send, queue_recv):
     print 'total time: %.2f' % time_total
     print 'printing time: %.2f' % time_print
     print 'copying time: %.2f' % (time_total - time_print)
+
+    queue_send.put('')
+    queue_recv.get()
 
 
 if __name__ == '__main__':
