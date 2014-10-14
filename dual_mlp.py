@@ -171,20 +171,23 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
                                         param_ga_remote.dtype.itemsize *
                                         param_ga_remote.size,
                                         ctx, ctx)
-                        # aaa = param_ga_other.get()
-                        # param_ga += param_ga_other
-                        # param_ga /= 2.
-                        # aaa = param_ga.get()
 
-                    # this_queue.put('')
-                    # that_queue.get()
-                    # for average_fun in average_fun_list:
-                    #     average_fun()
-
-                    for param, param_other in zip(classifier.params,
-                                                  param_other_list):
-                        param.set_value(
-                            (param.get_value() + param_other.get_value()) / 2.)
+                    if shared_args['avg_type'] == 'theano':
+                        for average_fun in average_fun_list:
+                            average_fun()
+                    elif shared_args['avg_type'] == 'cpu':
+                        for param, param_other in zip(classifier.params,
+                                                      param_other_list):
+                            param.set_value((param.get_value() +
+                                             param_other.get_value()) / 2.)
+                    elif shared_args['avg_type'] == 'pycuda':
+                        for param_ga, param_ga_other in \
+                                zip(param_ga_list, param_ga_other_list):
+                            param_ga += param_ga_other
+                            param_ga /= 2.
+                    else:
+                        raise NotImplementedError(
+                            'avg_type can only be theano, cpu or pycuda')
 
                 else:
                     for param in classifier.params:
@@ -232,6 +235,10 @@ if __name__ == '__main__':
     shared_args['L2_reg'] = 0.0001
     shared_args['n_hidden'] = 500
     shared_args['flag_p2p'] = True
+    shared_args['avg_type'] = 'theano'
+    # theano
+    # pycuda
+    # cpu
 
     p_args = {}
     p_args['ind_gpu'] = 0
