@@ -14,8 +14,14 @@ def test_mlp(learning_rate=0.13, L1_reg=0.00, L2_reg=0.0001, n_epochs=10,
              dataset='/mnt/data/datasets/mnist/mnist.pkl.gz',
              batch_size=10000, n_hidden=500):
 
+    ########################
+    drv.init()
+    dev = drv.Device(0)
+    ctx = dev.make_context()
+    ########################
+
     import theano.sandbox.cuda
-    theano.sandbox.cuda.use('gpu1')
+    theano.sandbox.cuda.use('gpu0')
 
     import theano
     import theano.tensor as T
@@ -26,11 +32,6 @@ def test_mlp(learning_rate=0.13, L1_reg=0.00, L2_reg=0.0001, n_epochs=10,
     import theano.misc.pycuda_init
     import theano.misc.pycuda_utils
 
-    ########################
-    drv.init()
-    dev = drv.Device(1)
-    ctx = dev.make_context()
-    ########################
 
     datasets = load_data(dataset)
 

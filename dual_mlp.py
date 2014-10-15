@@ -20,6 +20,18 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
     L2_reg = shared_args['L2_reg']
     n_hidden = shared_args['n_hidden']
 
+    # pycuda and zmq environment
+    if shared_args['flag_p2p']:
+        drv.init()
+        dev = drv.Device(private_args['ind_gpu'])
+        ctx = dev.make_context()
+        sock = zmq.Context().socket(zmq.PAIR)
+
+        if private_args['flag_client']:
+            sock.connect('tcp://localhost:5000')
+        else:
+            sock.bind('tcp://*:5000')
+
     import theano.sandbox.cuda
     theano.sandbox.cuda.use(private_args['gpu'])
 
@@ -35,17 +47,6 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
     print private_args
     print dataset
 
-    # pycuda and zmq environment
-    if shared_args['flag_p2p']:
-        drv.init()
-        dev = drv.Device(private_args['ind_gpu'])
-        ctx = dev.make_context()
-        sock = zmq.Context().socket(zmq.PAIR)
-
-        if private_args['flag_client']:
-            sock.connect('tcp://localhost:5000')
-        else:
-            sock.bind('tcp://*:5000')
 
     datasets = load_data(dataset)
 
@@ -235,6 +236,7 @@ if __name__ == '__main__':
     shared_args['L2_reg'] = 0.0001
     shared_args['n_hidden'] = 500
     shared_args['flag_p2p'] = True
+    # shared_args['flag_p2p'] = False
     shared_args['avg_type'] = 'theano'
     # theano
     # pycuda
@@ -248,7 +250,7 @@ if __name__ == '__main__':
     p_args['flag_client'] = False
 
     q_args = {}
-    q_args['ind_gpu'] = 1
+    q_args['ind_gpu'] = 2
     q_args['gpu'] = 'gpu' + str(q_args['ind_gpu'])
     q_args['mod'] = 0
     q_args['verbose'] = True
