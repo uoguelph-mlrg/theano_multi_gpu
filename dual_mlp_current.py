@@ -110,20 +110,24 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
             params_flat = []
             size_list = []
             shape_list = []
+            param_ga_list = []
 
             for param in classifier.params:
                 params_flat.append(param.flatten())
                 size_list.append(param.get_value().size)
                 shape_list.append(param.get_value().shape)
+                param_ga_list.append(
+                    theano.misc.pycuda_utils.to_gpuarray(
+                        param.container.value))
 
-            param_total = theano.shared(
-                0.5 * np.ones(sum(size_list)).astype('float32'))
-            param_total_other = theano.shared(
-                np.ones(sum(size_list)).astype('float32'))
+            # param_total = theano.shared(
+            #     0.5 * np.ones(sum(size_list)).astype('float32'))
+            # param_total_other = theano.shared(
+            #     np.ones(sum(size_list)).astype('float32'))
 
             # compile functions, concatenate, distribute, average
-            concatenate = theano.function(
-                [], updates=[(param_total, T.concatenate(params_flat))])
+            # concatenate = theano.function(
+            #     [], updates=[(param_total, T.concatenate(params_flat))])
             # concatenate = theano.function(
             #     [], updates=[(param_total, param_total)])
 
@@ -142,11 +146,16 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
             #                   (param_total + param_total_other) / 2.)])
 
             # pass handle
-            param_total_ga = theano.misc.pycuda_utils.to_gpuarray(
-                param_total.container.value)
+            # param_total_ga = theano.misc.pycuda_utils.to_gpuarray(
+            #     param_total.container.value)
 
-            param_total_ga_other = theano.misc.pycuda_utils.to_gpuarray(
-                param_total_other.container.value)
+            # param_total_ga_other = theano.misc.pycuda_utils.to_gpuarray(
+            #     param_total_other.container.value)
+
+            param_total_ga = gpuarray.GPUArray((sum(size_list), ),
+                                               'float32')
+            param_total_ga_other = gpuarray.GPUArray((sum(size_list), ),
+                                                     'float32')
 
             h = drv.mem_get_ipc_handle(param_total_ga.ptr)
             shape = param_total_ga.shape
@@ -158,9 +167,6 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
             param_total_ga_remote = \
                 gpuarray.GPUArray(shape_other, dtype_other,
                                   gpudata=drv.IPCMemoryHandle(h_other))
-
-        
-
 
         else:
             param_ga_list = []
@@ -222,8 +228,8 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
         epoch = epoch + 1
         for minibatch_index in xrange(n_train_batches):
 
-            # if minibatch_index % 2 == private_args['mod']:
-            if True:
+            if minibatch_index % 2 == private_args['mod']:
+            # if True:
                 train_model(minibatch_index)
 
                 this_queue.put('')
@@ -234,8 +240,7 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
                         shared_args['flag_combine_params']:
 
                     # concatenate, send, average, distribute
-                    concatenate()
-
+                    # concatenate()
 
                     # val_0 = param_total.get_value()
                     # distribute()
@@ -243,11 +248,20 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
                     # val_1 = param_total.get_value()
                     # print np.any(val_0 != val_1)
 
+                    # pycuda concatenate
+                    bgn_ptr = 0
+                    for param in param_ga_list:
+                        this_size = param.dtype.itemsize * param.size
+                        drv.memcpy_dtod(param_total_ga.ptr + bgn_ptr,
+                                        param.ptr, this_size)
+                        bgn_ptr += this_size
+
                     this_queue.put('')
                     that_queue.get()
-                    time.sleep(0.5)
+                    time.sleep(0.1)
 
-                    param_total.set_value(param_total.get_value() + 0.1)
+                    # param_total.set_value(param_total.get_value() + 0.1)
+
 
                     drv.memcpy_peer(param_total_ga_other.ptr,
                                     param_total_ga_remote.ptr,
@@ -256,17 +270,16 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
                                     ctx, ctx)
                     this_queue.put('')
                     that_queue.get()
-                    time.sleep(0.5)
-
+                    # time.sleep(0.1)
 
                     # Change these names and build better debugging "gates"
 
-                    print 'ph %d' % private_args['ind_gpu'], param_total_ga
-                    print 'po %d' % private_args['ind_gpu'], param_total_ga_other
+                    # print 'ph %d' % private_args['ind_gpu'], param_total_ga
+                    # print 'po %d' % private_args['ind_gpu'], param_total_ga_other
 
-                    print 'th %d' % private_args['ind_gpu'], param_total.get_value()
-                    print 'to %d' % private_args['ind_gpu'],
-                    param_total_other.get_value()
+                    # print 'th %d' % private_args['ind_gpu'], param_total.get_value()
+                    # print 'to %d' % private_args['ind_gpu'],
+                    # param_total_other.get_value()
 
                     # average()
 
@@ -274,6 +287,19 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
                     # print 'pa %d' % private_args['ind_gpu'], param_total_ga
 
                     # distribute()
+
+                    # pycuda average
+                    param_total_ga += param_total_ga_other
+                    param_total_ga /= 2.
+
+                    # pycuda distribute
+                    bgn_ptr = 0
+                    for param in param_ga_list:
+                        this_size = param.dtype.itemsize * param.size
+                        drv.memcpy_dtod(param.ptr,
+                                        param_total_ga.ptr + bgn_ptr,
+                                        this_size)
+                        bgn_ptr += this_size
 
                 elif shared_args['flag_p2p'] and \
                         (not shared_args['flag_combine_params']):
@@ -392,7 +418,7 @@ if __name__ == '__main__':
     # cpu
 
     p_args = {}
-    p_args['ind_gpu'] = 2
+    p_args['ind_gpu'] = 1
     p_args['gpu'] = 'gpu' + str(p_args['ind_gpu'])
     p_args['mod'] = 1
     p_args['verbose'] = True
