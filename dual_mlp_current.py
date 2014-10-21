@@ -168,6 +168,9 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
                 gpuarray.GPUArray(shape_other, dtype_other,
                                   gpudata=drv.IPCMemoryHandle(h_other))
 
+            sync_buffer = np.empty_like(param_total_ga, dtype='float32')
+            # sync_buffer = np.empty_like(1, dtype='float32')
+
         else:
             param_ga_list = []
             param_other_list = []
@@ -254,11 +257,18 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
                         this_size = param.dtype.itemsize * param.size
                         drv.memcpy_dtod(param_total_ga.ptr + bgn_ptr,
                                         param.ptr, this_size)
+                        
+                        # # do dtoh to force syncronization
+                        # drv.memcpy_dtoh(sync_buffer,
+                        #                 # param_total_ga.ptr + bgn_ptr)
+                        #                 param_total_ga.ptr)
+
                         bgn_ptr += this_size
+
 
                     this_queue.put('')
                     that_queue.get()
-                    time.sleep(0.1)
+                    # time.sleep(0.1)
 
                     # param_total.set_value(param_total.get_value() + 0.1)
 
@@ -268,8 +278,12 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
                                     param_total_ga_remote.dtype.itemsize
                                     * param_total_ga_remote.size,
                                     ctx, ctx)
-                    this_queue.put('')
-                    that_queue.get()
+                    # do dtoh to force syncronization
+                    drv.memcpy_dtoh(sync_buffer,
+                                    param_total_ga_other.ptr)
+
+                    # this_queue.put('')
+                    # that_queue.get()
                     # time.sleep(0.1)
 
                     # Change these names and build better debugging "gates"
