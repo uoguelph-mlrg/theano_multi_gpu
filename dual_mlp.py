@@ -8,6 +8,7 @@ import zmq
 import numpy as np
 import pycuda.driver as drv
 import pycuda.gpuarray as gpuarray
+# import pycuda.autoinit as autoinit
 
 
 def fun_mlp(shared_args, private_args, this_queue, that_queue):
@@ -24,7 +25,11 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
     if shared_args['flag_p2p']:
         drv.init()
         dev = drv.Device(private_args['ind_gpu'])
-        ctx = dev.make_context()
+        ctx_flags = drv.ctx_flags()
+        # flags.SCHED_BLOCKING_SYNC = 1
+        # ctx = dev.make_context(flags=flags)
+        # ctx = dev.make_context()
+        ctx = dev.make_context(flags=ctx_flags.SCHED_BLOCKING_SYNC)
         sock = zmq.Context().socket(zmq.PAIR)
 
         if private_args['flag_client']:
@@ -153,6 +158,12 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
 
     epoch = 0
     done_looping = False
+    start = drv.Event()
+    end = drv.Event()
+    # start = drv.Event(flags=drv.event_flags.BLOCKING_SYNC)
+    # end = drv.Event(flags=drv.event_flags.BLOCKING_SYNC)
+
+    # ctx.synchronize()
 
     while (epoch < n_epochs) and (not done_looping):
         epoch = epoch + 1
@@ -160,18 +171,49 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
 
             if minibatch_index % 2 == private_args['mod']:
                 train_model(minibatch_index)
+                
+                theano.sandbox.cuda.synchronize()
+                this_queue.put('')
+                that_queue.get()
 
                 # exchaning weights through Queue and calculation through CPU
                 if shared_args['flag_p2p']:
-                    for param_ga, param_ga_other, param_ga_remote in \
+                    for param_ga, param_ga_other, \
+                        param_ga_remote, average_fun in \
                             zip(param_ga_list, param_ga_other_list,
-                                param_ga_remote_list):
+                                param_ga_remote_list, average_fun_list):
 
+                        # start = drv.Event()
+                        # end = drv.Event()
+
+                        # event = drv.Event(flags=drv.event_flags.BLOCKING_SYNC)
+                        start.record()
+                        # for ind in range(1000):
                         drv.memcpy_peer(param_ga_other.ptr,
                                         param_ga_remote.ptr,
                                         param_ga_remote.dtype.itemsize *
                                         param_ga_remote.size,
                                         ctx, ctx)
+                        # event.record()
+                        end.record()
+                        bbb = ctx.synchronize()
+                        # autoinit.context.synchronize()
+                        # event1 = drv.Event(flags=drv.event_flags.BLOCKING_SYNC)
+                        # event1.record()
+                        # 
+                        end.synchronize()
+                        aaa = start.time_till(end)
+                        # print event.time_since(start)
+
+                        
+                        # time.sleep(0.00001)
+                        # average_fun()
+                    # this_queue.put('')
+                    # that_queue.get()
+                    # time.sleep(0.001)
+
+                    # ctx.synchronize()
+
 
                     if shared_args['avg_type'] == 'theano':
                         for average_fun in average_fun_list:
@@ -190,6 +232,18 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
                         raise NotImplementedError(
                             'avg_type can only be theano, cpu or pycuda')
 
+                    # for debugging exchange weights again and verifying
+                    for ind in range(len(classifier.params)):
+                        param = classifier.params[ind]
+                    # for param in classifier.params:
+                        this_W_val = param.get_value()
+                        this_queue.put(this_W_val)
+                        that_W_val = that_queue.get()
+
+                        if np.any(this_W_val != that_W_val):
+                            print '%s, %s, %d' % (private_args['gpu'], param.name, ind)
+
+
                 else:
                     for param in classifier.params:
                         this_W_val = param.get_value()
@@ -198,8 +252,8 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
                         param.set_value((that_W_val + this_W_val) / 2)
 
                 # test time speed if not actually exchanging weights
-                this_queue.put('')
-                that_queue.get()
+                # this_queue.put('')
+                # that_queue.get()
 
         if private_args['verbose']:
             validation_losses = [validate_model(i) for i
@@ -238,19 +292,21 @@ if __name__ == '__main__':
     shared_args['flag_p2p'] = True
     # shared_args['flag_p2p'] = False
     shared_args['avg_type'] = 'theano'
+    # shared_args['avg_type'] = 'pycuda'
+    # shared_args['avg_type'] = 'cpu'
     # theano
     # pycuda
     # cpu
 
     p_args = {}
-    p_args['ind_gpu'] = 0
+    p_args['ind_gpu'] = int(sys.argv[1])
     p_args['gpu'] = 'gpu' + str(p_args['ind_gpu'])
     p_args['mod'] = 1
     p_args['verbose'] = True
     p_args['flag_client'] = False
 
     q_args = {}
-    q_args['ind_gpu'] = 2
+    q_args['ind_gpu'] = int(sys.argv[2])
     q_args['gpu'] = 'gpu' + str(q_args['ind_gpu'])
     q_args['mod'] = 0
     q_args['verbose'] = True

@@ -279,8 +279,10 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
                                     * param_total_ga_remote.size,
                                     ctx, ctx)
                     # do dtoh to force syncronization
-                    drv.memcpy_dtoh(sync_buffer,
-                                    param_total_ga_other.ptr)
+                    # drv.memcpy_dtoh(sync_buffer,
+                    #                 param_total_ga_other.ptr)
+                    
+                    ctx.synchronize()
 
                     # this_queue.put('')
                     # that_queue.get()
@@ -432,14 +434,14 @@ if __name__ == '__main__':
     # cpu
 
     p_args = {}
-    p_args['ind_gpu'] = 1
+    p_args['ind_gpu'] = int(sys.argv[1])
     p_args['gpu'] = 'gpu' + str(p_args['ind_gpu'])
     p_args['mod'] = 1
     p_args['verbose'] = True
     p_args['flag_client'] = False
 
     q_args = {}
-    q_args['ind_gpu'] = 0
+    q_args['ind_gpu'] = int(sys.argv[2])
     q_args['gpu'] = 'gpu' + str(q_args['ind_gpu'])
     q_args['mod'] = 0
     q_args['verbose'] = True
