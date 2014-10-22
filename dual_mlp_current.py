@@ -234,9 +234,9 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
             if minibatch_index % 2 == private_args['mod']:
             # if True:
                 train_model(minibatch_index)
-
-                this_queue.put('')
-                that_queue.get()
+                theano.sandbox.cuda.synchronize()
+                # this_queue.put('')
+                # that_queue.get()
 
                 # exchaning weights through Queue and calculation through CPU
                 if shared_args['flag_p2p'] and \
@@ -265,6 +265,7 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
 
                         bgn_ptr += this_size
 
+                    ctx.synchronize()
 
                     this_queue.put('')
                     that_queue.get()
