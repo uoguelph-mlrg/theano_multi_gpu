@@ -2,3 +2,5 @@ tut_*
 test_*
 .nfs*
 *.pyc
+mlp.py
+logistic_sgd.py

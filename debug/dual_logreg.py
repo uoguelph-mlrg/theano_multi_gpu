@@ -1,3 +1,7 @@
+'''
+Using 2 gpus, but the weight transfer happens between cpu using Queue
+'''
+
 import os
 import sys
 import time
