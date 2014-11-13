@@ -46,4 +46,8 @@ THEANO_FLAGS=mode=FAST_RUN,floatX=float32 python dual_mlp.py 0 2
 
 *Lev Givon*, for providing help on inter process communication between 2 gpus with PyCUDA, Lev's original script https://gist.github.com/lebedov/6408165
 
-*Fei Mao* and *Guangyu Sun*, for help on debugging the code
+*Fei Mao*, for extensive discussions on GPUs, CUDA, and debugging
+
+*Graham Taylor*, for extensive suggestions
+
+*Guangyu Sun*, for help on debugging the code
