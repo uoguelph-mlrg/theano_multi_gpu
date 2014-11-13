@@ -1,37 +1,5 @@
 '''
-Author: Weiguang (Gavin) Ding, wding@uoguelph.ca
-
-This script trains a multi-layer perceptron with 2 gpus.
-It uses data parallelism, where 2 minibatches trained separately on 
-2 gpus are combined to be a larger minibatch.
-This is by no means the best of way using 2 gpus. 
-The purpose of this code is to show a way of using theano with
-multiprocessing and multiple gpus.
-
-To run this script you need to download
-http://deeplearning.net/tutorial/code/logistic_sgd.py
-and
-http://deeplearning.net/tutorial/code/mlp.py
-and put them in the same folder.
-
-dependencies: zmq, pycuda, numpy, theano
-
-In terminal run:
-THEANO_FLAGS=mode=FAST_RUN,floatX=float32 python dual_mlp.py arg1 arg2
-
-where arg1 is the index of the 1st gpu and arg2 is the index of the 2nd
-gpu. These 2 gpus need to be connected directly by PCI-e, otherwise the
-p2p transfer won't work
-
-For people at Guelph, on GPU1~10, run 
-THEANO_FLAGS=mode=FAST_RUN,floatX=float32 python dual_mlp.py 1 2
-
-on GPU11, run
-THEANO_FLAGS=mode=FAST_RUN,floatX=float32 python dual_mlp.py 0 2
-
-Acknowledgement:
-Fei Mao
-Lev Givon
+See README.md for a short description.
 '''
 
 import os

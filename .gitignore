@@ -4,3 +4,4 @@ test_*
 *.pyc
 mlp.py
 logistic_sgd.py
+*.html
