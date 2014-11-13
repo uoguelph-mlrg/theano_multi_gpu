@@ -205,8 +205,10 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
                                         param_ga_remote.size,
                                         ctx, ctx)
                         # event.record()
+
                         # end.record()
                         # bbb = ctx.synchronize()
+
                         # autoinit.context.synchronize()
                         # event1 = drv.Event(flags=drv.event_flags.BLOCKING_SYNC)
                         # event1.record()
@@ -238,6 +240,8 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
                     if shared_args['avg_type'] == 'theano':
                         for average_fun in average_fun_list:
                             average_fun()
+
+                        theano.sandbox.cuda.synchronize()
                     elif shared_args['avg_type'] == 'cpu':
                         for param, param_other in zip(classifier.params,
                                                       param_other_list):
@@ -248,6 +252,7 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
                                 zip(param_ga_list, param_ga_other_list):
                             param_ga += param_ga_other
                             param_ga /= 2.
+                        ctx.synchronize()
                     else:
                         raise NotImplementedError(
                             'avg_type can only be theano, cpu or pycuda')
