@@ -25,11 +25,11 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
     if shared_args['flag_p2p']:
         drv.init()
         dev = drv.Device(private_args['ind_gpu'])
-        ctx_flags = drv.ctx_flags()
+        # ctx_flags = drv.ctx_flags()
         # flags.SCHED_BLOCKING_SYNC = 1
         # ctx = dev.make_context(flags=flags)
-        # ctx = dev.make_context()
-        ctx = dev.make_context(flags=ctx_flags.SCHED_BLOCKING_SYNC)
+        ctx = dev.make_context()
+        # ctx = dev.make_context(flags=ctx_flags.SCHED_BLOCKING_SYNC)
         sock = zmq.Context().socket(zmq.PAIR)
 
         if private_args['flag_client']:
@@ -158,8 +158,8 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
 
     epoch = 0
     done_looping = False
-    start = drv.Event()
-    end = drv.Event()
+    # start = drv.Event()
+    # end = drv.Event()
     # start = drv.Event(flags=drv.event_flags.BLOCKING_SYNC)
     # end = drv.Event(flags=drv.event_flags.BLOCKING_SYNC)
 
@@ -178,6 +178,10 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
 
                 # exchaning weights through Queue and calculation through CPU
                 if shared_args['flag_p2p']:
+
+
+
+
                     for param_ga, param_ga_other, \
                         param_ga_remote, average_fun in \
                             zip(param_ga_list, param_ga_other_list,
@@ -187,32 +191,48 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
                         # end = drv.Event()
 
                         # event = drv.Event(flags=drv.event_flags.BLOCKING_SYNC)
-                        start.record()
+                        # start.record()
                         # for ind in range(1000):
+                        
+                        # if private_args['flag_delay']:
+                        #     print private_args['ind_gpu'], 'delayed'
+                        #     time.sleep(0.1)
+
+
                         drv.memcpy_peer(param_ga_other.ptr,
                                         param_ga_remote.ptr,
                                         param_ga_remote.dtype.itemsize *
                                         param_ga_remote.size,
                                         ctx, ctx)
                         # event.record()
-                        end.record()
-                        bbb = ctx.synchronize()
+                        # end.record()
+                        # bbb = ctx.synchronize()
                         # autoinit.context.synchronize()
                         # event1 = drv.Event(flags=drv.event_flags.BLOCKING_SYNC)
                         # event1.record()
                         # 
-                        end.synchronize()
-                        aaa = start.time_till(end)
+                        # end.synchronize()
+                        # aaa = start.time_till(end)
                         # print event.time_since(start)
 
                         
                         # time.sleep(0.00001)
                         # average_fun()
-                    # this_queue.put('')
-                    # that_queue.get()
-                    # time.sleep(0.001)
+                    
+                    ctx.synchronize()
 
-                    # ctx.synchronize()
+                    # bgn_time = time.time()
+                    this_queue.put((epoch, minibatch_index / 2))
+                    # print that_queue.get()
+                    that_queue.get()
+                    # print time.time() - bgn_time
+                    
+
+
+
+                    # time.sleep(0.05)
+                    # 
+
 
 
                     if shared_args['avg_type'] == 'theano':
@@ -283,7 +303,7 @@ if __name__ == '__main__':
 
     shared_args = {}
     shared_args['learning_rate'] = 0.13
-    shared_args['n_epochs'] = 10
+    shared_args['n_epochs'] = 100
     shared_args['dataset'] = '/mnt/data/datasets/mnist/mnist.pkl.gz'
     shared_args['batch_size'] = 5000
     shared_args['L1_reg'] = 0.00
@@ -311,6 +331,8 @@ if __name__ == '__main__':
     q_args['mod'] = 0
     q_args['verbose'] = True
     q_args['flag_client'] = True
+
+
 
     queue_p = Queue(1)
     queue_q = Queue(1)

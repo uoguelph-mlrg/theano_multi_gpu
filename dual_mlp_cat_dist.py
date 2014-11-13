@@ -167,7 +167,7 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
                         
                         bgn_ptr += this_size
 
-                    ctx.synchronize()
+                        ctx.synchronize()
 
                     this_queue.put('')
                     that_queue.get()
@@ -178,13 +178,15 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
                                     * param_total_ga_remote.size,
                                     ctx, ctx)
 
-                    # time.sleep
-                    
+
                     ctx.synchronize()
+                    this_queue.put('')
+                    that_queue.get()
 
                     # pycuda average
                     param_total_ga += param_total_ga_other
                     param_total_ga /= 2.
+                    # time.sleep(0.05)
 
                     ctx.synchronize()
                     # pycuda distribute
@@ -197,6 +199,8 @@ def fun_mlp(shared_args, private_args, this_queue, that_queue):
                         bgn_ptr += this_size
 
                     ctx.synchronize()
+                    
+                    # time.sleep(0.05)
 
                     # for debugging exchange weights again and verifying
                     for ind in range(len(classifier.params)):
