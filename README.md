@@ -26,19 +26,24 @@ multiprocessing and multiple gpus.
 
 ## How to run
 In terminal run:
+
 THEANO_FLAGS=mode=FAST_RUN,floatX=float32 python dual_mlp.py arg1 arg2
 
 where arg1 is the index of the 1st gpu and arg2 is the index of the 2nd
 gpu. These 2 gpus need to be connected directly by PCI-e, otherwise the
 p2p transfer won't work.
 
-For people at University of Guelph, on GPU1~10, run 
+For people at University of Guelph, on GPU1~10, run
+
 THEANO_FLAGS=mode=FAST_RUN,floatX=float32 python dual_mlp.py 1 2
 
 on GPU11, run
+
 THEANO_FLAGS=mode=FAST_RUN,floatX=float32 python dual_mlp.py 0 2
 
 ## Acknowledgement
 *Frédéric Bastien*, for providing the original page of [Using Multiple GPUs](https://github.com/Theano/Theano/wiki/Using-Multiple-GPUs)
+
 *Lev Givon*, for providing help on inter process communication between 2 gpus with PyCUDA, Lev's original script https://gist.github.com/lebedov/6408165
+
 *Fei Mao* and *Guangyu Sun*, for help on debugging the code
