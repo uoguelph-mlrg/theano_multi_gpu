@@ -2,6 +2,8 @@
 
 Demonstration of training the same neural network with multipe gpus using Theano and PyCUDA
 
+See [theano_alexnet](https://github.com/uoguelph-mlrg/theano_alexnet) and this technical report (link coming soon) for how to use this to train AlexNet.
+
 ## Dependencies
 
 Packages
@@ -16,13 +18,14 @@ Files needed to be in the same folder
 * [logistic_sgd.py](http://deeplearning.net/tutorial/code/logistic_sgd.py)
 * [mlp.py](http://deeplearning.net/tutorial/code/mlp.py)
 
+Download [mnist.pkl.gz](http://www.iro.umontreal.ca/~lisa/deep/data/mnist/mnist.pkl.gz) and change the shared_args['dataset'] to where you save it.
+
 
 ## Description
 
 * dual_mlp.py : This script trains a multi-layer perceptron with 2 gpus. It uses data parallelism, where 2 minibatches trained separately on 2 gpus are combined to be a larger minibatch. This is by no means the best of way using 2 gpus. The purpose of this code is to show a way of using theano with
 multiprocessing and multiple gpus.
 
-* debug/: contains old debug scripts for testing each components, which are poorly documented.
 
 ## How to run
 In terminal run:
