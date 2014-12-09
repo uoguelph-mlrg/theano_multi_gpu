@@ -2,7 +2,7 @@
 
 Demonstration of training the same neural network with multipe gpus using Theano and PyCUDA
 
-See [theano_alexnet](https://github.com/uoguelph-mlrg/theano_alexnet) and this technical report (link coming soon) for how to use this to train AlexNet.
+See [theano_alexnet](https://github.com/uoguelph-mlrg/theano_alexnet) and this [technical report](http://arxiv.org/abs/1412.2302) for how to use this to train AlexNet.
 
 ## Dependencies
 
