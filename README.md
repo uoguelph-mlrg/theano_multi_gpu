@@ -1,8 +1,19 @@
 #Multi-gpu using Theano and PyCUDA
 
-Demonstration of training the same neural network with multipe gpus using Theano and PyCUDA
+Demonstration of training the same neural network with multipe GPUs using Theano and PyCUDA
 
 See [theano_alexnet](https://github.com/uoguelph-mlrg/theano_alexnet) and this [technical report](http://arxiv.org/abs/1412.2302) for how to use this to train AlexNet.
+
+If you use this in your research, we kindly ask that you cite the above report:
+
+```bibtex
+@article{ding2014theano,
+  title={Theano-based Large-Scale Visual Recognition with Multiple GPUs},
+  author={Ding, Weiguang and Wang, Ruoyan and Mao, Fei and Taylor, Graham},
+  journal={arXiv preprint arXiv:1412.2302},
+  year={2014}
+}
+```
 
 ## Dependencies
 
