@@ -4,6 +4,8 @@ Demonstration of training the same neural network with multipe GPUs using Theano
 
 See [theano_alexnet](https://github.com/uoguelph-mlrg/theano_alexnet) and this [technical report](http://arxiv.org/abs/1412.2302) for how to use this to train AlexNet.
 
+Note this code is developed on the old Theano backend, CudaNdarray, and the way of exchanging weights here only works within a single node. For using the new Theano backend, GPUArray, and across-node multi-GPU support, see [Theano-MPI](https://github.com/uoguelph-mlrg/Theano-MPI).
+
 If you use this in your research, we kindly ask that you cite the above report:
 
 ```bibtex
